@@ -1,4 +1,6 @@
 """Command-line entry point for the safe shopping agent."""
+import utils.transport
+import utils.session
 import argparse
 from agent import OllamaChatModel, ShoppingAgent
 from harness import ToolHarness
