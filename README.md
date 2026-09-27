@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-This project is a small shopping assistant that receives a request, chooses a tool, observes its result, and decides whether another tool call is needed. Its local decision planner is deterministic and does not require an API key. It demonstrates the agent loop and application-level safety rules without connecting to an external LLM.
+This project is a small shopping assistant that receives a request, chooses a tool, observes its result, and decides whether another tool call is needed. The command-line app uses the local `llama3.2:3b` model through Ollama. No cloud API key is needed. The model proposes actions, while the application harness checks permissions and validates arguments before any tool runs.
 
 ## 2. Available Tools
 
@@ -12,23 +12,23 @@ This project is a small shopping assistant that receives a request, chooses a to
 | `check_stock` | Returns the inventory count for a product. | `product_id`: positive integer |
 | `delete_product` | Removes a product from the sample catalog. | `product_id`: positive integer |
 
-Each tool has an input schema in `schemas.py` and an implementation in `tools.py`.
+Each tool has an input schema in `schemas.py` and an implementation in `tools.py`. The schemas are also supplied to the model as tool definitions.
 
 ## 3. Agent Loop
 
-The agent processes a request one action at a time:
+The system prompt and available tool schemas are sent to Ollama with the user's request. The model can answer directly or propose a structured tool call. The agent processes that action and sends the observation back to the model:
 
 ```text
 User request
-    -> agent decides which tool to call
-    -> tool call with structured arguments
+    -> model decides which tool to call
+    -> structured tool call from the model
     -> harness checks permission and validates arguments
     -> tool executes
     -> agent observes the result
-    -> agent chooses another action or returns a final answer
+    -> model chooses another action or returns a final answer
 ```
 
-For an in-stock search, the agent can search for matching products, check one product, and use that stock result to decide whether to check another product.
+For an in-stock search, the model can search for matching products, check one product, and use that stock result to decide whether to check another product.
 
 ## 4. Permission Rule
 
@@ -47,18 +47,25 @@ The agent can propose an action, but the harness checks the active role before e
 - **Validation:** Tool schemas reject empty or overlong search queries, non-integer IDs, non-positive IDs, missing arguments, and unknown arguments.
 - **Error handling:** Permission failures, invalid inputs, unknown tools, missing products, and unexpected tool errors return controlled error results.
 - **Call limit:** `ToolHarness` allows at most five tool calls per run by default.
-- **Iteration limit:** `ShoppingAgent` allows at most six decision-loop iterations by default.
+- **Iteration limit:** `ShoppingAgent` allows at most ten decision-loop iterations by default.
 - **Empty request:** The agent asks the user to provide a request instead of calling a tool.
 
 ## 6. Example Run
 
-Run the in-stock example from the project directory:
+Install Ollama for your operating system, then download and start the small model:
+
+```bash
+ollama pull llama3.2:3b
+ollama run llama3.2:3b
+```
+
+Leave Ollama running. In another terminal, run the in-stock example from the project directory:
 
 ```bash
 .venv/bin/python main.py "Find a laptop that is currently in stock" --show-trace
 ```
 
-With the sample catalog, the tool calls and result are:
+With the sample catalog, a typical tool-call trace and result are:
 
 ```text
 [action] search_products({'query': 'laptop'})
@@ -79,9 +86,11 @@ Try the permission rule from the command line:
 .venv/bin/python main.py "Delete product 2" --role admin --show-trace
 ```
 
-Run the automated checks with:
+The exact natural-language wording can vary. The sequence should search the catalog, check product stock, and report the available quantity. Run the automated checks with:
 
 ```bash
 .venv/bin/python -m unittest -v
 ```
+
+You can choose another Ollama model or server URL with `--model` and `--ollama-url`.
 # 22_TRY_LIMHAI_AGENT
