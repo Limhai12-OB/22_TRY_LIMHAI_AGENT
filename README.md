@@ -52,20 +52,39 @@ The agent can propose an action, but the harness checks the active role before e
 
 ## 6. Example Run
 
-Install Ollama for your operating system, then download and start the small model:
+After cloning the repository, open a terminal in the project folder and create a virtual environment:
+
+```bash
+git clone <repository-url>
+cd <repository-folder>
+python -m venv .venv
+```
+
+Activate the environment:
+
+```bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+The project uses only Python's standard library, so it has no Python packages to install. Install Ollama for your operating system from [ollama.com/download](https://ollama.com/download), make sure its local server is running, and download the model:
 
 ```bash
 ollama pull llama3.2:3b
-ollama run llama3.2:3b
 ```
 
-Leave Ollama running. In another terminal, run the in-stock example from the project directory:
+On systems where Ollama does not start its server automatically, run `ollama serve` in a separate terminal and leave it running.
+
+Now run the example from the project folder:
 
 ```bash
-.venv/bin/python main.py "Find a laptop that is currently in stock" --show-trace
+python main.py "Find a laptop that is currently in stock" --show-trace
 ```
 
-With the sample catalog, a typical tool-call trace and result are:
+With the sample catalog, the expected sequence is a product search, stock checks, and a final answer. A typical successful trace is:
 
 ```text
 [action] search_products({'query': 'laptop'})
@@ -82,14 +101,14 @@ Developer Laptop (product 2) is in stock: 5 available.
 Try the permission rule from the command line:
 
 ```bash
-.venv/bin/python main.py "Delete product 2" --role customer --show-trace
-.venv/bin/python main.py "Delete product 2" --role admin --show-trace
+python main.py "Delete product 2" --role customer --show-trace
+python main.py "Delete product 2" --role admin --show-trace
 ```
 
 The exact natural-language wording can vary. The sequence should search the catalog, check product stock, and report the available quantity. Run the automated checks with:
 
 ```bash
-.venv/bin/python -m unittest -v
+python -m unittest -v
 ```
 
 You can choose another Ollama model or server URL with `--model` and `--ollama-url`.
